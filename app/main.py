@@ -44,7 +44,7 @@ def base_page(req: Request):
 def sign_up_page(req: Request):
     return templates.TemplateResponse("sign_up.html", {"request": req})
 
-@app.post("/sign_up", response_class=HTMLResponse)
+@app.post("/sign_up/", response_class=HTMLResponse)
 def sign_up(name: str = Form(...), id: str = Form(...), pw: str = Form(...), db: Session = Depends(get_db)):
     session_id = str(uuid4())
     db_user = User(id=id, name=name, password=pw, session_id=session_id)
@@ -59,3 +59,15 @@ def success(req: Request):
 @app.get("/sign_in")
 def sign_in_page(req: Request):
     return templates.TemplateResponse("sign_in.html", {"request": req})
+
+@app.post("/sign_in/")
+def sign_in(id: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    # 로그인 시도: 데이터베이스에서 사용자 확인 및 세션 설정
+    db_user = db.query(User).filter(User.id == id, User.password == password).first()
+    if db_user:
+        # 로그인 성공: 세션 설정 및 메인 페이지로 이동
+        response = RedirectResponse(url="/", status_code=303)
+        response.set_cookie(key="session_id", value=db_user.session_id)
+        return response
+    else:
+        return {"message": "로그인 실패!"}
