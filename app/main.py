@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Request, Form, Depends
+from fastapi import FastAPI, Request, Form, Depends, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import create_engine, Column, String
+from sqlalchemy import create_engine, Column, String, Integer, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.sql import func
 from uuid import uuid4
 
 # 데이터베이스 설정
@@ -22,6 +23,15 @@ class User(Base):
     password = Column(String)
     session_id = Column(String)
 
+class Post(Base):
+    __tablename__ = "posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    content = Column(Text)
+    author = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 # 데이터베이스 초기화
 Base.metadata.create_all(bind=engine)
 
@@ -36,13 +46,22 @@ def get_db():
     finally:
         db.close()
 
+def check_session(session_id: str = Cookie(None)):
+    if session_id:
+        return True
+    else:
+        return False
+
 @app.get("/")
-def base_page(req: Request):
-    return templates.TemplateResponse("base.html", {"request": req})
+def base_page(req: Request, session: bool = Depends(check_session)):
+    if session:
+        return templates.TemplateResponse("base_s.html", {"request": req})
+    else:
+        return templates.TemplateResponse("base.html", {"request": req})
 
 @app.get("/sign_up")
 def sign_up_page(req: Request):
-    return templates.TemplateResponse("sign_up.html", {"request": req})
+    return templates.TemplateResponse("signup.html", {"request": req})
 
 @app.post("/sign_up/", response_class=HTMLResponse)
 def sign_up(name: str = Form(...), id: str = Form(...), pw: str = Form(...), db: Session = Depends(get_db)):
@@ -58,7 +77,7 @@ def success(req: Request):
 
 @app.get("/sign_in")
 def sign_in_page(req: Request):
-    return templates.TemplateResponse("sign_in.html", {"request": req})
+    return templates.TemplateResponse("login.html", {"request": req})
 
 @app.post("/sign_in/")
 def sign_in(id: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
