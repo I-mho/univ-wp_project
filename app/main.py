@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, Depends, Cookie, Query
+from fastapi import FastAPI, Request, Form, Depends, Cookie, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import create_engine, Column, String, Integer, Text, DateTime
@@ -18,7 +18,6 @@ Base = declarative_base()
 # 사용자 데이터베이스 정의
 class User(Base):
     __tablename__ = "users"
-
     id = Column(String, primary_key=True, index=True)
     name = Column(String)
     password = Column(String)
@@ -27,11 +26,19 @@ class User(Base):
 # 게시글 데이터베이스 정의
 class Post(Base):
     __tablename__ = "posts"
-
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     content = Column(Text)
     author = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+# 게시글 댓글 데이터베이스 정의
+class Comment(Base):
+    __tablename__ = "comments"
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer)
+    author = Column(String)
+    content = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 # 데이터베이스 초기화
@@ -48,27 +55,21 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(session_id: str = Cookie(None), db: Session = Depends(get_db)):
+def check_session(session_id: str = Cookie(None), db: Session = Depends(get_db)):
     if session_id:
         user = db.query(User).filter(User.session_id == session_id).first()
-        return user
-    return None
+        return user if user else False
+    else:
+        return False
 
 @app.get("/")
-def base_page(req: Request, page: int = Query(1, gt=0), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    posts_per_page = 5
-    total_posts = db.query(Post).count()
-    total_pages = (total_posts + posts_per_page - 1) // posts_per_page
-    posts = db.query(Post).order_by(Post.created_at.desc()).offset((page - 1) * posts_per_page).limit(posts_per_page).all()
-    
-    if current_user:
-        return templates.TemplateResponse("base_s.html", {
-            "request": req,
-            "user": current_user,
-            "posts": posts,
-            "total_pages": total_pages,
-            "current_page": page
-        })
+def base_page(req: Request, db: Session = Depends(get_db), session: User = Depends(check_session), page: int = 1):
+    if session:
+        page_size = 5
+        total_posts = db.query(Post).count()
+        total_pages = (total_posts + page_size - 1) // page_size
+        posts = db.query(Post).order_by(Post.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        return templates.TemplateResponse("base_s.html", {"request": req, "posts": posts, "user": session, "total_pages": total_pages, "current_page": page})
     else:
         return templates.TemplateResponse("base.html", {"request": req})
 
@@ -109,40 +110,70 @@ def logout():
     return res
 
 @app.get("/mypage")
-def mypage(req: Request, current_user: User = Depends(get_current_user)):
-    if current_user:
-        return templates.TemplateResponse("mypage.html", {"request": req, "user": current_user})
+def mypage(req: Request, session: User = Depends(check_session)):
+    if session:
+        return templates.TemplateResponse("mypage.html", {"request": req, "user": session})
     else:
         return RedirectResponse(url='/sign_in')
 
 @app.get("/myaccount")
-def myaccount_page(req: Request, current_user: User = Depends(get_current_user)):
-    if current_user:
-        return templates.TemplateResponse("myaccount.html", {"request": req, "user": current_user})
+def myaccount_page(req: Request, db: Session = Depends(get_db), session_id: str = Cookie(None)):
+    db_user = db.query(User).filter(User.session_id == session_id).first()
+    if db_user:
+        return templates.TemplateResponse("myaccount.html", {"request": req, "user": db_user})
     else:
         return RedirectResponse(url="/sign_in", status_code=303)
 
 @app.post("/myaccount/")
-def update_account(name: str = Form(...), password: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_account(name: str = Form(...), password: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(check_session)):
     if current_user:
-        current_user.name = name
-        current_user.password = password
-        db.commit()
-        return RedirectResponse(url='/', status_code=303)
+        try:
+            old_name = current_user.name
+            current_user.name = name
+            current_user.password = password
+
+            db.query(Post).filter(Post.author == old_name).update({Post.author: name})
+            db.query(Comment).filter(Comment.author == old_name).update({Comment.author: name})
+
+            db.commit()
+            return RedirectResponse(url='/', status_code=303)
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=400, detail="업데이트 실패: " + str(e))
     return {"message": "업데이트 실패!"}
 
 @app.get("/post/new")
-def new_post_page(req: Request, current_user: User = Depends(get_current_user)):
-    if current_user:
-        return templates.TemplateResponse("newpost.html", {"request": req})
+def new_post_page(req: Request, session: User = Depends(check_session)):
+    if session:
+        return templates.TemplateResponse("newpost.html", {"request": req, "user": session})
     else:
         return RedirectResponse(url='/sign_in')
 
 @app.post("/post/new")
-def new_post(title: str = Form(...), content: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_post(title: str = Form(...), content: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(check_session)):
     if current_user:
-        new_post = Post(title=title, content=content, author=current_user.name)
-        db.add(new_post)
+        post = Post(title=title, content=content, author=current_user.name)
+        db.add(post)
         db.commit()
         return RedirectResponse(url='/', status_code=303)
-    return {"message": "글 작성 실패!"}
+    else:
+        return RedirectResponse(url='/sign_in')
+
+@app.post("/post/{post_id}/comment")
+def add_comment(post_id: int, content: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(check_session)):
+    if current_user:
+        comment = Comment(post_id=post_id, author=current_user.name, content=content)
+        db.add(comment)
+        db.commit()
+        return RedirectResponse(url=f'/post/{post_id}', status_code=303)
+    else:
+        return RedirectResponse(url='/sign_in')
+
+@app.get("/post/{post_id}")
+def read_post(post_id: int, req: Request, db: Session = Depends(get_db), current_user: User = Depends(check_session)):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    comments = db.query(Comment).filter(Comment.post_id == post_id).order_by(Comment.created_at).all()
+    if post:
+        return templates.TemplateResponse("post_detail.html", {"request": req, "post": post, "comments": comments, "user": current_user})
+    else:
+        return RedirectResponse(url='/')

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ post.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .post-content {
+            margin-bottom: 20px;
+        }
+        .comment-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .comment-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ post.title }}</h1>
+            <div>
+                <a href="/" class="button">메인 페이지로</a>
+            </div>
+        </div>
+        <div class="post-content">
+            <p>{{ post.content }}</p>
+            <small>작성자: {{ post.author }} | 작성일: {{ post.created_at }}</small>
+        </div>
+        <h2>댓글</h2>
+        <ul class="comment-list">
+            {% for comment in comments %}
+                <li class="comment-item">
+                    <p>{{ comment.content }}</p>
+                    <small>작성자: {{ comment.author }} | 작성일: {{ comment.created_at }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+        <h2>댓글 작성</h2>
+        <form action="/post/{{ post.id }}/comment" method="post">
+            <textarea name="content" rows="5" required></textarea><br>
+            <button type="submit" class="button">댓글 작성</button>
+        </form>
+    </div>
+</body>
+</html>

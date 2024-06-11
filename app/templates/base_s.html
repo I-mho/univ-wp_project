@@ -45,9 +45,13 @@
         .post-item {
             padding: 10px;
             border-bottom: 1px solid #ddd;
+            cursor: pointer;
         }
         .post-item:last-child {
             border-bottom: none;
+        }
+        .post-item:hover {
+            background-color: #f0f0f0;
         }
         .pagination {
             display: flex;
@@ -74,16 +78,15 @@
         <div class="header">
             <h1>{{ user.name }}</h1>
             <div>
-                <a href="/mypage" class="button">사용자 페이지</a>
+                <a href="/mypage" class="button">마이페이지</a>
                 <a href="/logout" class="button">로그아웃</a>
             </div>
         </div>
         <h2>게시글 목록 <a href="/post/new" class="button">글쓰기</a></h2>
         <ul class="post-list">
             {% for post in posts %}
-                <li class="post-item">
+                <li class="post-item" onclick="window.location.href='/post/{{ post.id }}'">
                     <h3>{{ post.title }}</h3>
-                    <p>{{ post.content }}</p>
                     <small>작성자: {{ post.author }} | 작성일: {{ post.created_at }}</small>
                 </li>
             {% endfor %}
