@@ -61,6 +61,15 @@ def check_session(session_id: str = Cookie(None), db: Session = Depends(get_db))
         return user if user else False
     else:
         return False
+    
+# def check_existing_user(id: str, name: str, db: Session = Depends(get_db)):
+#     existing_id = db.query(User).filter(User.id == id).first()
+#     existing_name = db.query(User).filter(User.name == name).first()
+#     if existing_id:
+#         return "이미 존재하는 아이디입니다."
+#     elif existing_name:
+#         return "이미 존재하는 이름입니다."
+#     return None
 
 @app.get("/")
 def base_page(req: Request, db: Session = Depends(get_db), session: User = Depends(check_session), page: int = 1):
