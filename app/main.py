@@ -118,7 +118,6 @@ def sign_in(req: Request, id: str = Form(...), password: str = Form(...), db: Se
     else:
         return templates.TemplateResponse("login.html", {"request": req, "error_msg": "아이디 또는 비밀번호가 틀렸습니다."})
 
-
 @app.get("/logout")
 def logout():
     res = RedirectResponse(url='/')
