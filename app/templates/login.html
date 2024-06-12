@@ -7,19 +7,31 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
             background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
         }
         .container {
+            max-width: 800px;
+            margin: 50px auto;
             background: white;
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: #0056b3;
         }
         .form-group {
             margin-bottom: 15px;
@@ -34,18 +46,10 @@
             padding: 8px;
             box-sizing: border-box;
         }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            font-size: 16px;
-            color: white;
-            background-color: #007BFF;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .button:hover {
-            background-color: #0056b3;
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -54,13 +58,16 @@
         <h1>로그인</h1>
         <form action="/sign_in/" method="post">
             <div class="form-group">
-                <label for="id">아이디</label><br>
-                <input type="text" id="id" name="id" required><br>
+                <label for="id">아이디</label>
+                <input type="text" id="id" name="id" required>
             </div>
             <div class="form-group">
-                <label for="password">비밀번호</label><br>
-                <input type="password" id="password" name="password" required><br><br>
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password" required>
             </div>
+            {% if error_msg %}
+            <p class="error-message">{{ error_msg }}</p>
+            {% endif %}
             <button type="submit" class="button">로그인</button>
         </form>
     </div>

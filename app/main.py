@@ -61,15 +61,6 @@ def check_session(session_id: str = Cookie(None), db: Session = Depends(get_db))
         return user if user else False
     else:
         return False
-    
-# def check_existing_user(id: str, name: str, db: Session = Depends(get_db)):
-#     existing_id = db.query(User).filter(User.id == id).first()
-#     existing_name = db.query(User).filter(User.name == name).first()
-#     if existing_id:
-#         return "이미 존재하는 아이디입니다."
-#     elif existing_name:
-#         return "이미 존재하는 이름입니다."
-#     return None
 
 @app.get("/")
 def base_page(req: Request, db: Session = Depends(get_db), session: User = Depends(check_session), page: int = 1):
@@ -87,7 +78,22 @@ def sign_up_page(req: Request):
     return templates.TemplateResponse("signup.html", {"request": req})
 
 @app.post("/sign_up/", response_class=HTMLResponse)
-def sign_up(name: str = Form(...), id: str = Form(...), pw: str = Form(...), db: Session = Depends(get_db)):
+def sign_up(req: Request, name: str = Form(...), id: str = Form(...), pw: str = Form(...), db: Session = Depends(get_db)):
+    existing_user_id = db.query(User).filter(User.id == id).first()
+    existing_user_name = db.query(User).filter(User.name == name).first()
+
+    id_error = "이미 존재하는 아이디입니다." if existing_user_id else ""
+    name_error = "이미 존재하는 이름입니다." if existing_user_name else ""
+
+    if id_error or name_error:
+        return templates.TemplateResponse("signup.html", {
+            "request": req,
+            "id_error_msg": id_error,
+            "name_error_msg": name_error,
+            "id_error": bool(existing_user_id),
+            "name_error": bool(existing_user_name)
+        })
+
     session_id = str(uuid4())
     db_user = User(id=id, name=name, password=pw, session_id=session_id)
     db.add(db_user)
@@ -103,14 +109,15 @@ def sign_in_page(req: Request):
     return templates.TemplateResponse("login.html", {"request": req})
 
 @app.post("/sign_in/")
-def sign_in(id: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def sign_in(req: Request, id: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.id == id, User.password == password).first()
     if db_user:
         response = RedirectResponse(url="/", status_code=303)
         response.set_cookie(key="session_id", value=db_user.session_id)
         return response
     else:
-        return {"message": "로그인 실패!"}
+        return templates.TemplateResponse("login.html", {"request": req, "error_msg": "아이디 또는 비밀번호가 틀렸습니다."})
+
 
 @app.get("/logout")
 def logout():
