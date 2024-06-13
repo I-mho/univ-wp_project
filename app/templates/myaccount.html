@@ -51,6 +51,10 @@
             font-size: 14px;
             margin-top: 5px;
         }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -68,7 +72,10 @@
                 <label for="password">비밀번호</label>
                 <input type="password" id="password" name="password" value="{{ user.password }}" required>
             </div>
-            <button type="submit" class="button">업데이트</button>
+            <div class="button-container">
+                <button type="submit" class="button">업데이트</button>
+                <a href="/mypage" class="button" style="background-color: #6c757d;">취소</a>
+            </div>
         </form>
     </div>
 </body>
