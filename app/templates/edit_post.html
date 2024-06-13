@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 수정</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .button.cancel {
+            background-color: #6c757d;
+        }
+        .button.cancel:hover {
+            background-color: #5a6268;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            height: 200px;
+            resize: vertical;
+        }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>게시글 수정</h1>
+        <form action="/post/{{ post.id }}/edit" method="post">
+            <div class="form-group">
+                <label for="title">제목(20자 이하)</label>
+                <input type="text" id="title" name="title" value="{{ post.title }}" maxlength="20" required>
+                {% if error and error.title %}
+                    <p class="error-message">{{ error.title }}</p>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="content">내용</label>
+                <textarea id="content" name="content" required>{{ post.content }}</textarea>
+                {% if error and error.content %}
+                    <p class="error-message">{{ error.content }}</p>
+                {% endif %}
+            </div>
+            <div class="button-container">
+                <button type="submit" class="button">수정</button>
+                <a href="/post/{{ post.id }}" class="button cancel">취소</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

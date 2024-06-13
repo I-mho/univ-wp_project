@@ -19,11 +19,6 @@
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
         .button {
             display: inline-block;
             padding: 10px 20px;
@@ -39,53 +34,57 @@
             background-color: #0056b3;
         }
         .post-content {
-            margin-bottom: 20px;
+            white-space: pre-wrap; /* 줄바꿈을 위한 스타일 */
+            word-wrap: break-word; /* 긴 단어를 줄바꿈 */
+            word-break: break-all; /* 긴 단어가 한 줄에 있을 때도 줄바꿈 */
         }
-        .comment-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        .comment-item {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        .comment-item:last-child {
-            border-bottom: none;
-        }
-        textarea {
+        .comment-box {
             width: 100%;
+            padding: 8px;
             box-sizing: border-box;
-            padding: 10px;
-            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .comment {
+            margin-bottom: 10px;
+        }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>{{ post.title }}</h1>
-            <div>
-                <a href="/" class="button">메인 페이지로</a>
+        <h1>{{ post.title }}</h1>
+        <small>작성자: {{ post.author }} | 작성일: {{ post.created_at }}</small>
+        <div class="post-content">{{ post.content }}</div>
+        {% if user and user.name == post.author %}
+            <div class="button-container">
+                <a href="/post/{{ post.id }}/edit" class="button">수정</a>
+                <form action="/post/{{ post.id }}/delete" method="post" style="display: inline;">
+                    <button type="submit" class="button" style="background-color: #dc3545;">삭제</button>
+                </form>
             </div>
-        </div>
-        <div class="post-content">
-            <p>{{ post.content }}</p>
-            <small>작성자: {{ post.author }} | 작성일: {{ post.created_at }}</small>
-        </div>
+        {% endif %}
         <h2>댓글</h2>
-        <ul class="comment-list">
-            {% for comment in comments %}
-                <li class="comment-item">
-                    <p>{{ comment.content }}</p>
-                    <small>작성자: {{ comment.author }} | 작성일: {{ comment.created_at }}</small>
-                </li>
-            {% endfor %}
-        </ul>
-        <h2>댓글 작성</h2>
         <form action="/post/{{ post.id }}/comment" method="post">
-            <textarea name="content" rows="5" required></textarea><br>
+            <textarea name="content" class="comment-box" required></textarea>
             <button type="submit" class="button">댓글 작성</button>
         </form>
+        <div class="comments">
+            {% for comment in comments %}
+                <div class="comment">
+                    <p><strong>{{ comment.author }}</strong> {{ comment.created_at }}</p>
+                    <p>{{ comment.content }}</p>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </body>
 </html>

@@ -206,3 +206,56 @@ def read_post(post_id: int, req: Request, db: Session = Depends(get_db), current
         return templates.TemplateResponse("post_detail.html", {"request": req, "post": post, "comments": comments, "user": current_user})
     else:
         return RedirectResponse(url='/')
+    
+# 게시글 수정 페이지
+@app.get("/post/{post_id}/edit")
+def edit_post_page(post_id: int, req: Request, db: Session = Depends(get_db), current_user: User = Depends(check_session)):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if current_user and post and current_user.name == post.author:
+        return templates.TemplateResponse("edit_post.html", {"request": req, "post": post})
+    else:
+        return RedirectResponse(url=f'/post/{post_id}', status_code=303)
+
+# 게시글 수정 처리
+@app.post("/post/{post_id}/edit")
+def update_post(post_id: int, req: Request, title: str = Form(...), content: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(check_session)):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if current_user and post and current_user.name == post.author:
+        if len(title) > 20:
+            return templates.TemplateResponse("edit_post.html", {"request": req, "post": post, "error": {"title": "제목은 20자 이하로 입력해주세요."}})
+        post.title = title
+        post.content = content
+        db.commit()
+        return RedirectResponse(url=f'/post/{post_id}', status_code=303)
+    else:
+        return RedirectResponse(url=f'/post/{post_id}', status_code=303)
+
+# 게시글 삭제 처리
+@app.post("/post/{post_id}/delete")
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(check_session)):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if current_user and post and current_user.name == post.author:
+        db.delete(post)
+        db.commit()
+    return RedirectResponse(url='/', status_code=303)
+    
+@app.post("/post/{post_id}/delete")
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(check_session)):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if current_user and post.author == current_user.name:
+        db.delete(post)
+        db.commit()
+        return RedirectResponse(url='/', status_code=303)
+    else:
+        return RedirectResponse(url='/')
+
+@app.post("/post/{post_id}/comment")
+def add_comment(post_id: int, content: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(check_session)):
+    if current_user:
+        comment = Comment(post_id=post_id, author=current_user.name, content=content)
+        db.add(comment)
+        db.commit()
+        return RedirectResponse(url=f'/post/{post_id}', status_code=303)
+    else:
+        return RedirectResponse(url='/sign_in')
+    
