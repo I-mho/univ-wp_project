@@ -63,6 +63,11 @@
     <div class="container">
         <h1>{{ post.title }}</h1>
         <small>작성자: {{ post.author }} | 작성일: {{ post.created_at }}</small>
+        <br><br>
+        <div>
+            <a href="/" class="button">메인페이지로</a>
+        </div>
+        <br>
         <div class="post-content">{{ post.content }}</div>
         {% if user and user.name == post.author %}
             <div class="button-container">
