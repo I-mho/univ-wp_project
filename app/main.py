@@ -248,13 +248,3 @@ def delete_post(post_id: int, db: Session = Depends(get_db), current_user: User 
         return RedirectResponse(url='/', status_code=303)
     else:
         return RedirectResponse(url='/')
-
-@app.post("/post/{post_id}/comment")
-def add_comment(post_id: int, content: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(check_session)):
-    if current_user:
-        comment = Comment(post_id=post_id, author=current_user.name, content=content)
-        db.add(comment)
-        db.commit()
-        return RedirectResponse(url=f'/post/{post_id}', status_code=303)
-    else:
-        return RedirectResponse(url='/sign_in')
