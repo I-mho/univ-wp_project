@@ -258,4 +258,3 @@ def add_comment(post_id: int, content: str = Form(...), db: Session = Depends(ge
         return RedirectResponse(url=f'/post/{post_id}', status_code=303)
     else:
         return RedirectResponse(url='/sign_in')
-    
