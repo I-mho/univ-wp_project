@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>내 계정</title>
+    <title>사용자 정보 수정</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -28,6 +28,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-right: 10px;
             text-decoration: none;
         }
         .button:hover {
@@ -37,46 +38,54 @@
             margin-bottom: 15px;
         }
         .form-group label {
-            display: block;
+            display: inline-block;
             margin-bottom: 5px;
             font-weight: bold;
         }
         .form-group input {
-            width: 100%;
+            width: calc(100% - 50px);
             padding: 8px;
             box-sizing: border-box;
         }
-        .error-message {
-            color: red;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .button-container {
-            display: flex;
-            justify-content: space-between;
+        .toggle-password {
+            cursor: pointer;
+            color: #007BFF;
+            display: inline-block;
+            vertical-align: middle;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>내 계정</h1>
+        <h1>사용자 정보 수정</h1>
         {% if error_msg %}
             <p class="error-message">{{ error_msg }}</p>
         {% endif %}
         <form action="/myaccount/" method="post">
             <div class="form-group">
-                <label for="name">이름</label>
+                <label for="name">이름</label> <br>
                 <input type="text" id="name" name="name" value="{{ user.name }}" required>
             </div>
             <div class="form-group">
-                <label for="password">비밀번호</label>
+                <label for="password">비밀번호 <span class="toggle-password" onclick="togglePassword()">보기</span></label>
                 <input type="password" id="password" name="password" value="{{ user.password }}" required>
             </div>
-            <div class="button-container">
-                <button type="submit" class="button">업데이트</button>
-                <a href="/mypage" class="button" style="background-color: #6c757d;">취소</a>
-            </div>
+            <button type="submit" class="button">업데이트</button>
+            <a href="/mypage" class="button" style="background-color: #6c757d;">취소</a>
         </form>
     </div>
+    <script>
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const togglePasswordButton = document.querySelector('.toggle-password');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                togglePasswordButton.textContent = '숨기기';
+            } else {
+                passwordField.type = 'password';
+                togglePasswordButton.textContent = '보기';
+            }
+        }
+    </script>
 </body>
 </html>
