@@ -140,8 +140,17 @@ def myaccount_page(req: Request, db: Session = Depends(get_db), session_id: str 
         return RedirectResponse(url="/sign_in", status_code=303)
 
 @app.post("/myaccount/")
-def update_account(name: str = Form(...), password: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(check_session)):
+def update_account(req: Request, name: str = Form(...), password: str = Form(...), db: Session = Depends(get_db), current_user: User = Depends(check_session)):
     if current_user:
+        # 다른 사용자의 동일 이름 검사
+        existing_name = db.query(User).filter(User.name == name, User.id != current_user.id).first()
+        if existing_name:
+            return templates.TemplateResponse("myaccount.html", {
+                "request": req, 
+                "user": current_user, 
+                "error_msg": "이미 존재하는 이름입니다."
+            })
+
         try:
             old_name = current_user.name
             current_user.name = name
@@ -154,8 +163,13 @@ def update_account(name: str = Form(...), password: str = Form(...), db: Session
             return RedirectResponse(url='/', status_code=303)
         except Exception as e:
             db.rollback()
-            raise HTTPException(status_code=400, detail="업데이트 실패: " + str(e))
+            return templates.TemplateResponse("myaccount.html", {
+                "request": req, 
+                "user": current_user, 
+                "error_msg": "업데이트 실패: " + str(e)
+            })
     return {"message": "업데이트 실패!"}
+
 
 @app.get("/post/new")
 def new_post_page(req: Request, session: User = Depends(check_session)):
